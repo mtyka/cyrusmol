@@ -85,7 +85,7 @@ class Structure(db.Model):
         'user_id': str(self.user_id),
         'taskname': str(self.taskname),
         'queuename': str(self.queuename),
-        'cpuseconds': se    lf.cpuseconds,
+        'cpuseconds': self.cpuseconds,
         'workerinfo': str(self.workerinfo),
         'energies': str(self.energies),
         'stderr': str(self.stderr)
