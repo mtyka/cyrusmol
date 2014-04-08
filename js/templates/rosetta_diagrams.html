@@ -1,0 +1,143 @@
+
+		<div id="container">
+			<div id="workspace_container">
+				<div id='mover_properties_container'>
+					<div id='mover_properties' class='label_border' >
+						<div id='mover_properties_label' style='margin: 0 auto;'>
+							<img src='js/rosetta_diagrams/icons/large/rscripts_properties_label.png'/>
+						</div>
+						<div id='mover_properties_content' style='overflow:auto; height:200px;'>
+							<button id="add_attribute">
+								Add Attribute
+							</button>
+							<table id='attribute_list' class='tablesorter'>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Value</th>
+										<th>Delete</th>
+									</tr>
+								</thead>
+								<tbody id='attribute_list_body'>
+
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<div id='menu_container' class='label_border'  >
+					<div id='menu_label' style='float:right; height:100%;'>
+						<table style='height:100%'>
+							<tr>
+								<td valign="middle"><img src='js/rosetta_diagrams/icons/large/rscripts_palette_label.png'/></td>
+							</tr>
+						</table>
+
+					</div>
+					<div id='menu_resizer' style='height:99%; width:340px;'>
+						<div id="menu" style='float:left;'>
+
+							<h3>Movers</h3>
+							<div id='movers_menu'>
+
+							</div>
+							<h3>Filters</h3>
+							<div id='filters_menu'>
+
+							</div>
+							<h3>TaskOperations</h3>
+							<div id ='task_operations_menu'>
+
+							</div>
+
+							<h3>Control structures</h3>
+							<div id='logic_menu'>
+
+							</div>
+
+						</div>
+					</div>
+				</div>
+				<div id='display_code_container'  class='label_border'>
+					<div id='display_code_label' style='display: table-cell; vertical-align:middle; width:50px;' >
+						<img src='js/rosetta_diagrams/icons/large/rscripts_code_label.png'/>
+					</div>
+					<div id="main_toolbar" class="ui-widget-header ui-corner-all" style="position:absolute; right:10px; margin-top:1em;">
+						<button id="play">play</button>
+						<button id ='btn_paste_code'>Paste existing code</button>
+					</div>	
+					 
+					<pre id='display_code' class='prettyprint wordwrap' style="display:table-cell;"></pre>
+
+				</div>
+				<div id='progressbar_dialog'>
+					<div id="progressbar"></div>
+				</div>
+
+				<div id='paste_code_dialog'>
+					<h3>Rosetta Scripts Code:</h3>
+					<textarea style='width:100%; height:70%;'></textarea>
+				</div>
+
+				<div id="dialog-confirm" title="Discard existing diagram?" style='display:none;'>
+				  <p><span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 20px 0;"></span>The current diagram will be overwrriten. Are you sure?</p>
+				</div>
+
+				<div id='information_panel_wrapper'>
+
+				</div>
+				<div id="world">
+
+				</div>
+				<!-- world -->
+			</div>
+			<!--  workspace container -->
+
+			<div id="code">
+				<pre>
+&lt;ROSETTASCRIPTS&gt;
+
+        &lt;SCOREFXNS&gt;
+        &lt;/SCOREFXNS&gt;
+
+        &lt;TASKOPERATIONS&gt;
+<span id=xml_task_operations>
+
+</span>
+        &lt;/TASKOPERATIONS&gt;
+
+        &lt;FILTERS&gt;
+<span id=xml_filters>
+	
+</span>
+        &lt;/FILTERS&gt;
+
+        &lt;MOVERS&gt;
+</pre>
+				<span id=xml_movers> </span>
+				<pre>
+        &lt;/MOVERS&gt;
+
+        &lt;APPLY_TO_POSE&gt;
+        &lt;/APPLY_TO_POSE&gt;
+
+        &lt;PROTOCOLS&gt;
+<span id=xml_protocols>
+	
+</span>
+        &lt;/PROTOCOLS&gt;
+
+&lt;/ROSETTASCRIPTS&gt;
+</pre>
+			</div>
+
+		</div>
+		<!--container -->
+		<div id='wiki_info' style='display:none;'>
+
+			<iframe style='width:100%; height:100%; display:none; overflow-x:hidden; border-width:0px;'>
+
+			</iframe>
+
+		</div>

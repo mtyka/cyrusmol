@@ -14,7 +14,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // This module implements the generic job dialog 
-
 var JobDialogManager = (function ($) {
 
   function load_file_from_disk(filenamefield, textfield) {
@@ -408,6 +407,5 @@ var JobDialogManager = (function ($) {
 
   return my;
 }(jQuery));
-
 
 

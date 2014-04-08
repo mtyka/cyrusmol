@@ -19,14 +19,15 @@
 """
 
 import webapp2
-
+	
 from google.appengine.api import users
 
 import common
 import operation
 import structure
 import task
-
+import diagrams
+import elements
 
 class MainPageHandler(common.RequestHandler):
   ROUTE = '/'
@@ -52,6 +53,8 @@ app = webapp2.WSGIApplication(sum([MainPageHandler.Routes(),
                                    operation.Routes(),
                                    task.Routes(),
                                    structure.Routes(),
+                                   diagrams.Routes(),
+				   		elements.Routes()
                                   ],
                                   []), debug=True)
 

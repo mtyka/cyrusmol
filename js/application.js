@@ -223,7 +223,126 @@ var ServerRequests = (function($) {
       })
   }
 
+//////////////////// Diagram related functions
+function populateDiagramList() {
+	$('#diagram_list_container').html('');
+	$.ajax({
+		type:"GET",
+		url:'/diagram/list',
+		success: function(diagrams) {
+			if ( diagrams === undefined ) 
+				return;
+			_.each(diagrams,function(d) {
+				console.log(d);
+				var diagram_opener = $("<button style='display: block;'>"+d.name+"</button>");
+				diagram_opener.click(function(){
+					createNewDiagram({id:d._id});
+				})
+				$('#diagram_list_container').append(diagram_opener);	
+			});
+				
+		}
+	});
+}
+function createNewDiagram(create_obj) {
+	require(['text!templates/rosetta_diagrams.html','views/appView','models/Diagram','models/globals','models/PaletteElements','Backbone','BackboneRelational','vkbeautify','prettify','jQueryUI',
+	         'Joint','Joint_dia_org','Joint_dia_uml','tablesorter','EasingMenu'], 
+			function(diagrams_text,appView,Diagram,model_globals,PaletteElements,Backbone,BackboneRelational) {
+				var app_view = undefined;
+				$('#diagram_container').append($(diagrams_text));
+				
+				var menu_container_start_left = $("#menu_container").css('left');
+				var mover_properties_start_bottom = $("#mover_properties_container").css('bottom');
+				var display_code_container_start_right = $("#display_code_container").css('right');
+				
+				$("#menu_container").make_menu({
+					start_loc: {left  : 0}, 
+					start_method: {duration: 1000, method: 'easeInSine'},
+					end_loc: {left:menu_container_start_left},
+					end_method:{duration: 1000, method: 'easeOutSine'}
+				});
+				
+				$("#mover_properties_container").make_menu({
+					start_loc: { bottom  : 5}, 
+					start_method: {duration: 1000, method: 'easeInSine'},
+					end_loc: {bottom: mover_properties_start_bottom},
+					end_method:{duration: 1000, method: 'easeOutSine'}
+				});
+				
+				$("#display_code_container").make_menu({
+					start_loc: { right  : 0}, 
+					start_method: {duration: 1000, method: 'easeInSine'},
+					end_loc: {right: display_code_container_start_right},
+					end_method:{duration: 1000, method: 'easeOutSine'}
+				});
+				$('#diagram_container').dialog({
+					autoOpen:true,
+					close:function() { if ( app_view != undefined ) app_view.remove(); }
+				});
+				
 
+				Backbone.Relational.store.addModelScope(model_globals);
+				var open_diagram = (function() {
+					$('#diagram_container').scrollTop(0);
+					$.getJSON('/js/rosetta_diagrams/js/json/elements.json',function(models) {
+						app_view = new appView({palette:models});
+						app_view.render();
+					});
+				});
+				var d;
+				if ( create_obj.id ){
+					var d = Diagram.find(create_obj.id)
+					if (_.isNull(d) || _.isUndefined(d)) {
+						d = new Diagram();
+						d.id = create_obj.id;
+						d.fetch({success: function() {
+							d.get('elements').fetch({success:function(){
+								open_diagram();
+							}});
+						}});
+
+					} else {
+						open_diagram();
+					}
+				}
+				else if (create_obj.name){
+					d = new Diagram({name:create_obj.name});
+					d.save(null,{success:function() {
+						open_diagram();
+					}});
+				}else {
+					alert("Error creating diagram");
+				}
+				
+				model_globals.MainDiagram = d;
+				model_globals.ActiveDiagram = d;
+	});
+}
+
+function initNewDiagramDialog() {
+	$("#new_diagram_dialog").dialog({
+				title:"Enter diagram name",
+				autoOpen:false,
+				buttons: {
+					OK: function() {
+						$(this).dialog("close");
+						var diagram_name = $(this).find('#diagram_name').val();
+						createNewDiagram({name:diagram_name});
+					},
+				},
+					Cancel: function() {
+						$('#diagram_name').val('');
+						$(this).dialog("close");	
+					}
+	});
+}
+
+function initDiagramButton() {
+	initNewDiagramDialog();
+	$("#btn_open_diagram").click( function() {
+		$("#new_diagram_dialog").dialog("open");
+	});
+}
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// Raw Structure list manipulation. THe raw structure list is a little tab on the bottom of the screen that helps with debugging mainly.
@@ -289,7 +408,7 @@ var ServerRequests = (function($) {
       $("#loadingstructure").show()
 
       $('#glmol01_src').val("");
-      glmol01.loadMolecule();
+      window.glmol.loadMolecule();
 
       url = "/structure/get?"
       if( key ){
@@ -347,18 +466,21 @@ var ServerRequests = (function($) {
   // Init - set up user interface and button events
   $(function(){
     // load all the various views using AJAX requests
-    updateTaskList()
-    updateStructureList()
-    updateOperationsView()
-    
-    // register the button events on the page
-    $("button#updateStructureList").click(function(){updateStructureList()})
-    $("button#deleteAllStructures").click(function(){deleteAllStructures()})
-    $("button#updateOperationsView").click(function(){updateOperationsView('')})
-    $("button#deleteAllOperations").click(function(){deleteAllOperations()})
-    $("button#updateTaskList").click(function(){updateTaskList()})
-    $("button#purgeQueue").click(function(){purgeQueue()})
-  })
+	updateTaskList()
+	updateStructureList()
+	updateOperationsView()
+	initDiagramButton();
+	populateDiagramList();
+
+
+	// register the button events on the page
+	$("button#updateStructureList").click(function(){updateStructureList()})
+	$("button#deleteAllStructures").click(function(){deleteAllStructures()})
+	$("button#updateOperationsView").click(function(){updateOperationsView('')})
+	$("button#deleteAllOperations").click(function(){deleteAllOperations()})
+	$("button#updateTaskList").click(function(){updateTaskList()})
+	$("button#purgeQueue").click(function(){purgeQueue()})
+})
 
   // return object with public member functions/variables
   return my;

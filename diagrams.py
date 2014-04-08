@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#
+# Written by mtyka@google.com (Mike Tyka)
 # Written by lior.zimmerman@mail.huji.ac.il (Lior Zimmerman)
 #
 # Copyright 2012-2013 Google Inc.
@@ -18,40 +18,31 @@
 """Defines data models needed for RosettaDiagrams
 
 """
-import hashlib
-import urllib 
 import httplib
 import json
 import webapp2
 import common
-
+import functools
 from google.appengine.api import users
 from google.appengine.ext import db
 
-
 diagram_list_name = 'db_diagrams'
-
 
 class Diagram(db.Model):
   """Models a molecular structure or system.
 
     _id: id of the diagram
     user_id: the user that the diagram belongs to
-    created_time: self explainatory
+    created_time: self explanatory
     elements: a list of ids of all the diagram elements in that diagram.
     parent_element: id of the parent element of the diagram (null if its the root diagram)
     
   """
-  _id = db.Key()
   user_id = db.StringProperty()
   created_time = db.DateTimeProperty(auto_now_add=True)
   elements = db.StringListProperty()
   parent_element = db.StringProperty()
-  
-  @classmethod
-  def Key(cls, diagram_name):
-    """Constructs a Datastore key for a diagram entity with diagram_name."""
-    return db.Key.from_path('Diagram', diagram_name)
+  name = db.StringProperty()
 
   def AsDict(self):
     """Returns data in dictionary form."""
@@ -60,13 +51,15 @@ class Diagram(db.Model):
         'created_time': str(self.created_time),
         'user_id': str(self.user_id),
         'elements': str(self.elements),
+        'name': str(self.name),
+        'parent_element':str(self.parent_element)
     }
 
     return dform
 
 
 class List(common.RequestHandler):
-  ROUTE = '/diagrams/list'
+  ROUTE = '/diagram/list'
 
   @classmethod
   def Routes(cls):
@@ -74,29 +67,47 @@ class List(common.RequestHandler):
 
   @common.RequestHandler.LoginRequired
   def get(self):   # pylint: disable=g-bad-name
+
     """Obtain a list of diagrams."""
     user = users.get_current_user()
-    diagrams = Diagram.query(user_id=user.user_id).fetch()
-
+    all_diagrams = Diagram.all()
+    diagrams = all_diagrams.filter('user_id =', user.user_id()).filter('parent_element = ', "").run()
+    diagrams_dicts = [d.AsDict() for d in diagrams]
+    
     self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
-    self.response.headers['Content-Disposition'] = 'attachment'
-    self.response.out.write(json.dumps(diagrams))
+    self.response.out.write(json.dumps(diagrams_dicts))
+
+class DiagramBelongsToUser(common.RequestHandler):
+
+	@staticmethod
+	def DiagramBelongs(func):
+		""" Decorator function - checks if diagram belongs to current user """
+
+		@functools.wraps(func)
+		def CheckDiagram(self, *args, **kwargs):
+			print args
+
+			return func(self,*args, **kwargs)
+		return CheckDiagram
 
 
-class Get(common.RequestHandler):
-  ROUTE = '/diagrams/get'
+class GetDiagram(common.RequestHandler):
+  ROUTE = r'/diagram/<:([\w\-]+)?>'
 
   @classmethod
   def Routes(cls):
     return [webapp2.Route(cls.ROUTE, cls, methods=['GET'])]
 
   @common.RequestHandler.LoginRequired
-  def get(self):   # pylint: disable=g-bad-name
+  def get(self,diagram_id):   # pylint: disable=g-bad-name
     """Obtain a particular diagram based on a key."""
 
-    id = self.request.get('_id')
-    diagram = db.get(id)
-    
+    diagram = db.get(diagram_id)
+    if not diagram:
+      self.abort(httplib.FORBIDDEN)
+      return
+
+
     # Check that this user matches the owner of the object
     user = users.get_current_user()
     if user.user_id() != diagram.user_id:
@@ -109,25 +120,29 @@ class Get(common.RequestHandler):
     self.response.headers['Content-Type'] = 'application/json; charset=utf-8'
     self.response.headers['Content-Disposition'] = 'attachment'
     self.response.out.write(json.dumps(diagram_dict))
-    return
 
 
-
-class Put(common.RequestHandler):
-  ROUTE = '/diagrams/put'
+class New(common.RequestHandler):
+  ROUTE = '/diagram/new'
 
   @classmethod
   def Routes(cls):
     return [webapp2.Route(cls.ROUTE, cls, methods=['POST'])]
-
-  def put(self):   # pylint: disable=g-bad-name
+  
+  @common.RequestHandler.LoginRequired
+  def post(self):   # pylint: disable=g-bad-name
     """Add a diagram to the database. This is called by the workers"""
     
-    new_diagram = Diagram(Diagram.Key(diagram_list_name))
+    print "NAME"
+    diagram_json = json.loads(self.request.body)
+    print diagram_json['name']
+    
+    new_diagram = Diagram();
     user = users.get_current_user()
     
-    new_diagram.user_id = user.user_id
-
+    new_diagram.user_id = user.user_id()
+    new_diagram.name = diagram_json['name']
+    new_diagram.parent_element = diagram_json['parent_element'] or ""
     new_diagram.put()
     
     new_diagram_dict = new_diagram.AsDict()
@@ -137,11 +152,11 @@ class Put(common.RequestHandler):
     self.response.out.write(json.dumps(new_diagram_dict))
 
 class Delete(common.RequestHandler):
-  ROUTE = '/diagrams/delete'
+  ROUTE = '/diagram/delete'
 
   @classmethod
   def Routes(cls):
-    return [webapp2.Route(cls.ROUTE, cls, methods=['POST'])]
+    return [webapp2.Route(cls.ROUTE, cls, methods=['DELETE'])]
 
   @common.RequestHandler.LoginRequired
   def delete(self):  # pylint: disable=g-bad-name
@@ -159,9 +174,7 @@ class Delete(common.RequestHandler):
     self.response.set_status(200)
     
 
-all_routes = [List.Routes(), Get.Routes(), Put.Routes(), Delete.Routes()]
-
+all_routes = [List.Routes(), GetDiagram.Routes(), New.Routes(), Delete.Routes()]
 
 def Routes():
-  return sum(all_routes, [])
-
+	return sum(all_routes, [])

@@ -17,7 +17,6 @@
 
 // This module implements graph window manipulation. Data is plotted using D3. Right now any change in the graph necessitates
 // complete redrawing. That's easier and cleaner to implement but also less smooth. 
-(function ($) {
 
     // private vars - these should really move into the DOM object since there should be one per independent graph.
 
@@ -296,5 +295,3 @@
 
       return obj
     }
-
-}(jQuery));

@@ -19,27 +19,61 @@
 
 <html>
 <head>
+
   <title>CyrusMol</title>
   <!-- standard libraries -->
   <link type="text/css" rel="stylesheet" href="/stylesheets/jquery-ui-1.9.2.custom.css" />
   <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <link rel="stylesheet" href="js/rosetta_diagrams/js/lib/jquery-ui/plugins/tablesorter/themes/blue/style.css"/>
+  <link href="js/rosetta_diagrams/js/lib/prettify/prettify.css" type="text/css" rel="stylesheet" />
+  <link rel="stylesheet" href="/stylesheets/rosetta_diagrams.css"/>
+
+<script type="text/template" id="attribute_template">
+	<td><input type="text" value="<%= key %>" id="attr_key"/></td>
+	<td><input type="text" value="<%= value %>" id="attr_value"/></td>
+	<td><button id="deleteBtn">X</button></td>
+</script>
+{% raw %}
+<script type="text/template" id="movers_template">
+	&lt;<%=name%><%
+	var attributes = attributes.nonEmpty();
+	for (var i=0; i<attributes.length; ++i) {
+	var attr = attributes[i];
+
+	%> <%= attr.get('key') %>='<%= attr.get('value') %>'<% } %>/&gt;
+</script>
+<script type="text/template" id="protocols_template">
+	&lt;Add <%=typeObj.add_protocol%>='<%= attributes.byKey("name").get('value') %>'/&gt;
+</script>
+<script type="text/template" id="information_message_template">
+	<div id='information_message_body' class="<% if (type == 'error') {%> ui-state-error <%} else {%> ui-state-highlight <%}%> ui-corner-all"
+	style="margin-top: 20px; padding: 0 .7em; margin:0px auto; width:50%;">
+	<p>
+	<span class="ui-icon ui-icon-info"
+	style="float: left; margin-right: .3em;"></span> <strong><%=title%></strong>
+	<%=message%>
+	</p>
+	</div>
+</script>
+{% endraw %}
+  <script type="text/javascript" src="js/rosetta_diagrams/js/lib/requirejs/require.js" data-main="js/boot.js"></script>
+  <!-- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
   <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.0.8/d3.min.js"></script>
-  <script type="text/javascript" src="http://static.jstree.com/v.1.0pre/jquery.cookie.js"></script>
-  <script type="text/javascript" src="http://static.jstree.com/v.1.0pre/jquery.hotkeys.js"></script>
-  <script type="text/javascript" src="http://static.jstree.com/v.1.0pre/jquery.jstree.js"></script>
+  <script type="text/javascript" src="http://cachedcommons.org/cache/jquery-cookie/0.0.0/javascripts/jquery-cookie-min.js"></script>
+  <script type="text/javascript" src="http://cachedcommons.org/cache/jquery-hotkeys/0.0.0/javascripts/jquery-hotkeys-min.js"></script>
+  <script type="text/javascript" src="http://cachedcommons.org/cache/jquery-jstree/1.0.0/javascripts/jquery-jstree-min.js"></script>
   <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r52/three.min.js"></script>
   <script type="text/javascript" src="https://cyrusmol.googlecode.com/git/js/GLmol.js"></script>
   <!-- custom libraries -->
-  <script type="text/javascript" src="js/jobdialog.js"></script>
+  <!--<script type="text/javascript" src="js/jobdialog.js"></script>
   <script type="text/javascript" src="js/context.js"></script>
   <script type="text/javascript" src="js/application.js"></script>
   <script type="text/javascript" src="js/graphing.js"></script>
   <script type="text/javascript" src="js/nacls_common.js"></script>
-  <script type="text/javascript" src="js/nacls_rosetta.js"></script>
+  <script type="text/javascript" src="js/nacls_rosetta.js"></script> -->
   <script type="text/javascript">
-    $(function() {
+   /* $(function() {
         $( "#rightmenu" ).accordion({collapsible: true, heightStyle: "fill" });
         $( "#leftmenu" ).accordion({collapsible: false, heightStyle: "fill",  alwaysOpen: true });
         $('#diagram_container').dialog({ 
@@ -47,7 +81,6 @@
         	width:1200,
         	height:600  
         });
-  		$('#btn_open_diagram').click(function() { $('#diagram_container').dialog('open'); });
     });
  
     
@@ -298,7 +331,7 @@
         }
         this.modelGroup.add(asu);
     };
-  
+  */
   </script>
 </head>
 <style>
@@ -320,14 +353,14 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
   <div class="insideTab">
     You can load PDB, SDF/MOL(MDL not SYBYL) or XYZ files <br>
     -from local disk (don't worry. your file will not be uploaded),
-    <input id="glmol01_file" type="file" size=1><button onClick="loadFile()">Load from file</button><br>
+    <input id="glmol01_file" type="file" size=1><button id="btn_glmol01_file">Load from file</button><br>
     -from RCSB PDB server,
-    PDBID: <input id="glmol01_pdbid" value="2POR" size=4><button onClick="download('pdb:' + $('#glmol01_pdbid').val())">Download</button><br>
+    PDBID: <input id="glmol01_pdbid" value="2POR" size=4><button id="glmol_pdb_id_btn">Download</button><br>
     -from PubChem server,
-    Compound ID(CID): <input id="glmol01_cid" value="2244" size=4><button onClick="download('cid:' + $('#glmol01_cid').val())">Download</button><br>
+    Compound ID(CID): <input id="glmol01_cid" value="2244" size=4><button id="glmol01_cid_btn">Download</button><br>
     -or from the textarea below.<br>
     <textarea wrap="off" id="glmol01_src" style="width: 100%; height:24em; overflow:scroll;"></textarea><br>
-    <button onClick="glmol01.loadMolecule(); $('#loading').hide();">Reload molecule from textarea</button>
+    <button id="btn_reload_molecule">Reload molecule from textarea</button>
   </div>
 </div>
 
@@ -339,7 +372,7 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
   <h3>View settings</h3>
   <div>
     <div style="display: inline; overflow: auto;">
-    Color by <select id="glmol01_color" onchange="updateRepresentation()" >
+    Color by <select id="glmol01_color">
      <option selected="selected" value="atomtype">element</option>
      <option value="chainbow">spectrum</option>
      <option value="chain">chain</option>
@@ -347,8 +380,8 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
      <option value="b">B factor</option>
      <option value="polarity">polar/nonpolar</option>
     </select><br>
-    <input id="glmol01_showMainchain" type="checkbox" onchange="updateRepresentation()"  checked>Main chain as 
-    <select id="glmol01_mainchain" onchange="updateRepresentation()" >
+    <input id="glmol01_showMainchain" type="checkbox" checked>Main chain as 
+    <select id="glmol01_mainchain">
      <option value="bonds">sticks<option>
      <option selected="selected" value="tube">Tube</option>
      <option value="thickRibbon">thick ribbon</option>
@@ -358,15 +391,15 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
      <option value="chain">C alpha trace</option>
      <option value="btube">B factor Tube</option>
     </select><br>
-    <input id="glmol01_showBases" type="checkbox" onchange="updateRepresentation()"  checked>Nucleic acid bases as
-    <select id="glmol01_base" onchange="updateRepresentation()" >
+    <input id="glmol01_showBases" type="checkbox" checked>Nucleic acid bases as
+    <select id="glmol01_base" >
      <option value="nuclStick">sticks</option>
      <option selected="selected" value="nuclLine">lines</option>
      <option value="nuclPolygon">polygons</option>
     </select><br>
     
-    <input id="glmol01_showSidechains" type="checkbox" onchange="updateRepresentation()" checked>Sidechains
-    <select id="glmol01_sidechain" onchange="updateRepresentation()" >
+    <input id="glmol01_showSidechains" type="checkbox" checked>Sidechains
+    <select id="glmol01_sidechain">
      <option selected="selected" value="stick">sticks</option>
      <option value="ballAndStick">ball and stick</option>
      <option value="ballAndStick2">ball and stick (multiple bond)</option>
@@ -379,16 +412,16 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
     <input id="glmol01_sticks" type="checkbox" checked="no"  onchange="updateRepresentation()" >Side chains as sticks<br>
     <input id="glmol01_spheres" type="checkbox" checked="no"  onchange="updateRepresentation()" >Side chains as spheres<br>
 -->
-    <input id="glmol01_showHydrogens" type="checkbox" onchange="updateRepresentation()" >Show Hydrogens<br>
-    <input id="glmol01_doNotSmoothen" type="checkbox" onchange="updateRepresentation()" >Smooth Sheets <br>
-    <input id="glmol01_showNonBonded" type="checkbox" onchange="updateRepresentation()" >Solvent/Ions
-    <select id="glmol01_nb" onchange="updateRepresentation()" >
+    <input id="glmol01_showHydrogens" type="checkbox">Show Hydrogens<br>
+    <input id="glmol01_doNotSmoothen" type="checkbox">Smooth Sheets <br>
+    <input id="glmol01_showNonBonded" type="checkbox">Solvent/Ions
+    <select id="glmol01_nb">
      <option value="nb_sphere">spheres</option>
      <option selected="selected" value="nb_cross">stars</option>
     </select>
     <br>
-    <input id="glmol01_showHetatms" type="checkbox" onchange="updateRepresentation()" checked>Ligands
-    <select id="glmol01_hetatm" onchange="updateRepresentation()" >
+    <input id="glmol01_showHetatms" type="checkbox" checked>Ligands
+    <select id="glmol01_hetatm">
      <option value="stick">sticks</option>
      <option value="ballAndStick">ball and stick</option>
      <option value="ballAndStick2">ball and stick (multiple bond)</option>
@@ -396,29 +429,29 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
      <option value="icosahedron">icosahedrons</option>
      <option value="line">lines</option>
     </select><br>
-    <input id="glmol01_cell" type="checkbox" onchange="updateRepresentation()" >Unit cell<br>
-    <input id="glmol01_biomt" type="checkbox" onchange="updateRepresentation()" >Biological assembly <br>
-    <input id="glmol01_packing" type="checkbox" onchange="updateRepresentation()" >Crystal packing<br>
-    <input id="glmol01_symopHetatms" type="checkbox" onchange="updateRepresentation()" >Show HETATMs in symmetry mates<br>
+    <input id="glmol01_cell" type="checkbox" >Unit cell<br>
+    <input id="glmol01_biomt" type="checkbox">Biological assembly <br>
+    <input id="glmol01_packing" type="checkbox">Crystal packing<br>
+    <input id="glmol01_symopHetatms" type="checkbox">Show HETATMs in symmetry mates<br>
     
-    <select style="display: none" id="glmol01_bgcolor" onchange="updateRepresentation()" >
+    <select style="display: none" id="glmol01_bgcolor">
      <option value="0xffffff">white</option>
      <option value="0x000000">#444444</option>
      <option  selected="selected" value="0x444444">grey</option>
     </select>
     
     <br>
-    Projection: <select id="glmol01_projection" onchange="updateRepresentation()" >
+    Projection: <select id="glmol01_projection" >
      <option value="orthoscopic">orthoscopic</option>
      <option selected="selected" value="perspective">perspective</option>
     </select><br><br>
-    <button onClick="saveImage()">Screenshot</button>
+    <button id="btn_save_img">Screenshot</button>
     <br>
     <input type="radio" name="glmol01_mouseMode" value="0" checked>Rotate<br>
     <input type="radio" name="glmol01_mouseMode" value="1">Translate<br>
     <input type="radio" name="glmol01_mouseMode" value="2">Zoom<br>
     <input type="radio" name="glmol01_mouseMode" value="3">Slab<br><br>
-    <button onClick="glmol01.doFunc(function(mol) {mol.zoomInto(mol.getAllAtoms());mol.show()});">Reset view</button>
+    <button id="btn_reset_view">Reset view</button>
   </div>
   </div>
  
@@ -445,7 +478,8 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
   
   <h3>Rosetta Diagram</h3>
   <div>
-  		<button id='btn_open_diagram'>Open Diagram</button>
+  		<div id="diagram_list_container"></div>
+  		<button id='btn_open_diagram'>New Diagram</button>
   </div>
 </div>
 </div>
@@ -500,15 +534,15 @@ NACLS-Status: <code id="statusField">NO-STATUS</code>
 </div>
 
 <script type="text/javascript">
-addTab('#glmol01_srcbox', '400px', 0);
-addTab('#joblist_box', '400px', 1);
-addTab('#tasklist_box', '400px', 2);
-addTab('#glmol01_infobox', '400px', 4);
-var glmol01 = new GLmol('glmol01', true);
-var query = window.location.search.substring(1);
-if (query == '') download('local:1fna.pdb');
-else download(query);
-glmol01.defineRepresentation = defineRepFromController;
+// addTab('#glmol01_srcbox', '400px', 0);
+// addTab('#joblist_box', '400px', 1);
+// addTab('#tasklist_box', '400px', 2);
+// addTab('#glmol01_infobox', '400px', 4);
+// var glmol01 = new GLmol('glmol01', true);
+// var query = window.location.search.substring(1);
+// if (query == '') download('local:1fna.pdb');
+// else download(query);
+// glmol01.defineRepresentation = defineRepFromController;
 </script>
 
 
@@ -520,13 +554,31 @@ glmol01.defineRepresentation = defineRepFromController;
 
 <div id="contextmenudiv" style="width:300px" ></div>
 
-<div id='diagram_container' style="background-color: white;">
-	
-	<iframe src="/js/rosetta_diagrams/editor.html" style="width: 100%; height:100%; border-width: 0px;" ></iframe>
+<div id='diagram_container' style="background-color: white; overflow: hidden; ">
+	<!-- <iframe src="/js/rosetta_diagrams/editor.html" style="width: 100%; height:100%; border-width: 0px;" ></iframe> -->
 	
 </div>
+<div id="new_diagram_dialog">
+	<fieldset>
+		<label for="diagram_name">Enter the name of the diagram</label>
+		<input name="diagram_name" type="text" id="diagram_name"/>
+	</fieldset>
 
-
+</div>
+<div id="toolbar" class="ui-widget-header ui-corner-all" style="display:none;">
+	<button id='btn_delete' class="ui-icon-trash">
+		Delete element
+	</button>
+	<button id='btn_connect' class="ui-icon-arrowthick-1-e">
+		Form a connection
+	</button>
+	<button id='btn_info' class='ui-icon-info'>
+		About
+	</button>
+	<button id='btn_subdiagram' class='ui-icon-newwin'>
+		Open Subdiagram
+	</button>
+</div>
 </body>
 </html>
 
